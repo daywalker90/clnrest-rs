@@ -70,6 +70,8 @@ else
     exit 1
 fi
 
+cp "$clnrest_dir/clnrest" "$clnrest_dir/clnrest.py"
+
 # Function to check if a Python package is installed
 check_package() {
     python_exec="$1"

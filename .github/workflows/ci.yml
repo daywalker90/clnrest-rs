@@ -172,6 +172,7 @@ jobs:
           fi
           cargo build
           sudo cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest
+          sudo cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest.py
         fi
 
     - name: Run tests
