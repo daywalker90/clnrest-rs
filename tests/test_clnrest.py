@@ -410,7 +410,7 @@ def test_clnrest_options(node_factory):
     # with invalid port
     rest_port = 1000
     l1 = node_factory.get_node(options={'clnrest-port': rest_port})
-    assert l1.daemon.is_in_log(f'plugin-clnrest(\.py)?: Killing plugin: disabled itself at init: `clnrest-port` {rest_port}, should be a valid available port between 1024 and 65535.')
+    assert l1.daemon.is_in_log(r'plugin-clnrest(\.py)?: '+ f'Killing plugin: disabled itself at init: `clnrest-port` {rest_port}, should be a valid available port between 1024 and 65535.')
 
     # with invalid protocol
     rest_port = str(node_factory.get_unused_port())
@@ -439,7 +439,7 @@ def test_clnrest_http_headers(node_factory):
     assert response.headers['Access-Control-Allow-Origin'] == '*'
     # This might happen really early!
     l1.daemon.logsearch_start = 0
-    l1.daemon.wait_for_log(f'plugin-clnrest(\.py)?: REST server running at {base_url}')
+    l1.daemon.wait_for_log(r'plugin-clnrest(\.py)?: ' + f'REST server running at {base_url}')
 
     # Custom values for `clnrest-csp` and `clnrest-cors-origins` options
     rest_port = str(node_factory.get_unused_port())
@@ -453,7 +453,7 @@ def test_clnrest_http_headers(node_factory):
     base_url = 'https://127.0.0.1:' + rest_port
     # This might happen really early!
     l2.daemon.logsearch_start = 0
-    l2.daemon.wait_for_log(f'plugin-clnrest(\.py)?: REST server running at {base_url}')
+    l2.daemon.wait_for_log(r'plugin-clnrest(\.py)?: ' + f'REST server running at {base_url}')
     ca_cert = Path(rest_certs) / 'ca.pem'
 
     response = http_session.get(base_url + '/v1/list-methods',
