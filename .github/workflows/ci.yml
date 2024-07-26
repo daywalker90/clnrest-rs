@@ -171,7 +171,7 @@ jobs:
             python -m grpc_tools.protoc --proto_path="proto" --python_out="tests" --grpc_python_out="tests" proto/*.proto
           fi
           cargo build
-          cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest
+          sudo cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest
         fi
 
     - name: Run tests
