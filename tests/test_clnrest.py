@@ -1,5 +1,5 @@
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import env, TEST_NETWORK
+from pyln.testing.utils import env, sync_blockheight, wait_for, TEST_NETWORK
 from pyln.client import Millisatoshi
 import unittest
 import os
@@ -383,13 +383,26 @@ def test_clnrest_websocket_rune_no_listnotifications(node_factory):
     assert len([n for n in notifications if n.find('invoice_creation') > 0]) == 0
 
 
-def test_clnrest_numeric_msat_notification(node_factory):
+def test_clnrest_numeric_msat_notification(node_factory, bitcoind):
     """Test that msat fields are integers in notifications also."""
     # start a node with clnrest
     rest_port = str(node_factory.get_unused_port())
     base_url = 'http://127.0.0.1:' + rest_port
     l1, l2 = node_factory.get_nodes(2, opts=[{}, {'clnrest-port': rest_port, 'clnrest-protocol': 'http'}])
-    node_factory.join_nodes([l1, l2], wait_for_announce=True)
+    l1.fundwallet(10_000_000)
+    l1.rpc.fundchannel(
+        l2.info["id"] + "@localhost:" + str(l2.port),
+        1_000_000,
+        mindepth=1,
+        announce=True,
+    )
+    bitcoind.generate_block(6)
+    sync_blockheight(bitcoind, [l1, l2])
+
+    wait_for(
+        lambda: len(l1.rpc.listpeerchannels(l2.info["id"])["channels"]) > 0
+    )
+
     http_session = http_session_with_retry()
 
     # create an invoice on l2
