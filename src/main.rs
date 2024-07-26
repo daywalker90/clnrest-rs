@@ -73,11 +73,14 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
-        .layer(ServiceBuilder::new().layer(middleware::from_fn_with_state(
-            plugin.clone(),
-            header_inspection_middleware,
-        )))
-        .layer(socket_layer)
+        .layer(
+            ServiceBuilder::new()
+                .layer(middleware::from_fn_with_state(
+                    plugin.clone(),
+                    header_inspection_middleware,
+                ))
+                .layer(socket_layer),
+        )
         .nest(
             "/v1",
             Router::new()

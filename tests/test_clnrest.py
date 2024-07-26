@@ -6,6 +6,7 @@ import os
 import requests
 from pathlib import Path
 from requests.adapters import HTTPAdapter
+import socketio.exceptions
 from urllib3.util.retry import Retry
 import socketio
 import time
@@ -251,7 +252,7 @@ def test_clnrest_large_response(node_factory):
 # to complain with the errors F811 like this "F811 redefinition of
 # unused 'message'".
 
-def notifications_received_via_websocket(l1, base_url, http_session, rpc_method='invoice', rpc_params=[100000, 'label', 'description']):
+def notifications_received_via_websocket(l1, base_url, http_session, rpc_method='invoice', rpc_params=[100000, 'label', 'description'], expect_error=None):
     """Return the list of notifications received by the websocket client.
 
     We try to connect to the websocket server running at `base_url`
@@ -268,7 +269,15 @@ def notifications_received_via_websocket(l1, base_url, http_session, rpc_method=
     @sio.event
     def message(data):
         notifications.append(data)
-    sio.connect(base_url)
+    try:
+        sio.connect(base_url)
+    except socketio.exceptions.ConnectionError as e:
+        if expect_error and expect_error in str(e):
+            return notifications
+        else:
+            raise
+    except Exception as e:
+        raise
     time.sleep(2)
     # trigger notification by calling method
     rpc_call = getattr(l1.rpc, rpc_method)
@@ -288,7 +297,7 @@ def test_clnrest_websocket_no_rune(node_factory):
     http_session.verify = ca_cert.as_posix()
 
     # no rune provided => no websocket connection and no notification received
-    notifications = notifications_received_via_websocket(l1, base_url, http_session)
+    notifications = notifications_received_via_websocket(l1, base_url, http_session, expect_error="403")
     assert len(notifications) == 0
 
 
@@ -304,9 +313,9 @@ def test_clnrest_websocket_wrong_rune(node_factory):
     # wrong rune provided => no websocket connection and no notification received
     http_session.headers.update({"rune": "jMHrjVJb5l9-mjEd7zwux7Ookra1fgZ8wa9D8QbVT-w9MA=="})
 
-    notifications = notifications_received_via_websocket(l1, base_url, http_session)
+    notifications = notifications_received_via_websocket(l1, base_url, http_session, expect_error="401")
     l1.daemon.logsearch_start = 0
-    assert l1.daemon.is_in_log(r"error: {'code': 1501, 'message': 'Not authorized: Not derived from master'}")
+    assert l1.daemon.is_in_log(r"Error code 1501: Not authorized: Not derived from master")
     assert len(notifications) == 0
 
 
@@ -370,7 +379,7 @@ def test_clnrest_websocket_rune_no_listnotifications(node_factory):
     # with a rune which doesn't authorized listclnrest-notifications method => no websocket connection and no notification received
     rune_no_clnrest_notifications = l1.rpc.createrune(restrictions=[["method/listclnrest-notifications"]])['rune']
     http_session.headers.update({"rune": rune_no_clnrest_notifications})
-    notifications = notifications_received_via_websocket(l1, base_url, http_session)
+    notifications = notifications_received_via_websocket(l1, base_url, http_session, expect_error="401")
     assert len([n for n in notifications if n.find('invoice_creation') > 0]) == 0
 
 

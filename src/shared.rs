@@ -1,5 +1,5 @@
 use cln_plugin::Plugin;
-use cln_rpc::{ClnRpc, RpcError};
+use cln_rpc::{model::responses::CheckruneResponse, ClnRpc, RpcError};
 use serde_json::json;
 
 use crate::{handlers::AppError, PluginState};
@@ -21,15 +21,33 @@ pub async fn verify_rune(
         )
         .await
         {
-            Ok(_o) => Ok(()),
-            Err(e) => Err(AppError::Unauthorized(e)),
+            Ok(o) => {
+                let check_resp: CheckruneResponse = serde_json::from_value(o).unwrap();
+                if check_resp.valid {
+                    Ok(())
+                } else {
+                    let err = RpcError {
+                        code: Some(1502),
+                        message: "Rune is not valid".to_string(),
+                        data: None,
+                    };
+                    log::info!("{}", err);
+                    Err(AppError::Unauthorized(err))
+                }
+            }
+            Err(e) => {
+                log::info!("{}", e);
+                Err(AppError::Unauthorized(e))
+            }
         }
     } else {
-        Err(AppError::Forbidden(RpcError {
+        let err = RpcError {
             code: Some(1501),
             data: None,
             message: "Not authorized: Missing rune".to_string(),
-        }))
+        };
+        log::info!("{}", err);
+        Err(AppError::Forbidden(err))
     }
 }
 
