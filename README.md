@@ -3,7 +3,7 @@
 [![main on CLN v24.05](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.05.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.05.yml) [![main on CLN v24.02.2](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.02.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.02.yml) [![main on CLN v23.11.2](https://github.com/daywalker90/clnrest/actions/workflows/main_v23.11.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v23.11.yml)
 
 # clnrest
-A rust rewrite of [clnrest]()
+A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/master/plugins/clnrest)
 
 * [Installation](#installation)
 * [Building](#building)
