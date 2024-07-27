@@ -33,8 +33,11 @@ pub const OPT_CLNREST_CSP: DefaultStringConfigOption = ConfigOption::new_str_wit
     style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';",
     "Content security policy (CSP) for the server",
 );
-pub const OPT_CLNREST_SWAGGER: DefaultStringConfigOption =
-    ConfigOption::new_str_with_default("clnrest-swagger-root", "/", "Root path for Swagger UI");
+pub const OPT_CLNREST_SWAGGER: DefaultStringConfigOption = ConfigOption::new_str_with_default(
+    "clnrest-swagger-root",
+    "/swagger-ui",
+    "Root path for Swagger UI",
+);
 
 pub enum ClnrestProtocol {
     Https,
@@ -47,6 +50,7 @@ pub struct ClnrestOptions {
     pub address: SocketAddr,
     pub cors: CorsLayer,
     pub csp: String,
+    pub swagger: String,
 }
 
 pub async fn parse_options(
@@ -54,12 +58,6 @@ pub async fn parse_options(
 ) -> Result<ClnrestOptions, anyhow::Error> {
     let port = if let Some(p) = plugin.option(&OPT_CLNREST_PORT)? {
         if !(1024..=65535).contains(&p) {
-            // plugin
-            //     .disable(&format!(
-            //         "`clnrest-port` {}, should be a valid available port between 1024 and 65535.",
-            //         p
-            //     ))
-            //     .await?;
             return Err(anyhow!(
                 "`clnrest-port` {}, should be a valid available port between 1024 and 65535.",
                 p
@@ -68,9 +66,6 @@ pub async fn parse_options(
         p as u16
     } else {
         log::info!("`clnrest-port` option is not configured");
-        // return plugin
-        //     .disable("`clnrest-port` option is not configured")
-        //     .await;
         return Err(anyhow!("`clnrest-port` option is not configured"));
     };
 
@@ -78,9 +73,6 @@ pub async fn parse_options(
         p if p.eq_ignore_ascii_case("https") => ClnrestProtocol::Https,
         p if p.eq_ignore_ascii_case("http") => ClnrestProtocol::Http,
         _ => {
-            // return plugin
-            //     .disable("`clnrest-protocol` can either be http or https.")
-            //     .await;
             return Err(anyhow!("`clnrest-protocol` can either be http or https."));
         }
     };
@@ -95,7 +87,6 @@ pub async fn parse_options(
             if let Ok(a) = address_str.parse() {
                 a
             } else {
-                // return plugin.disable("`clnrest-host` should be a valid IP.").await;
                 return Err(anyhow!("`clnrest-host` should be a valid IP."));
             }
         }
@@ -110,6 +101,15 @@ pub async fn parse_options(
 
     let csp = plugin.option(&OPT_CLNREST_CSP)?;
 
+    let swagger = match plugin.option(&OPT_CLNREST_SWAGGER)? {
+        swag if swag.eq("/") => {
+            return Err(anyhow!(
+                "`clnrest-swagger-root` already serving websocket at the root level"
+            ))
+        }
+        swag => swag,
+    };
+
     Ok(ClnrestOptions {
         certs,
         protocol,
@@ -117,6 +117,7 @@ pub async fn parse_options(
         address,
         cors,
         csp,
+        swagger,
     })
 }
 

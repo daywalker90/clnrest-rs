@@ -44,6 +44,14 @@ impl IntoResponse for AppError {
 }
 
 // Handler for list-methods
+#[utoipa::path(
+    get,
+    path = "/v1/list-methods",
+    responses(
+        (status = 200, description = "Success", body = String, content_type = "text/html"),
+        (status = 500, description = "Server Error", body = serde_json::Value)
+    )
+)]
 pub async fn list_methods(
     Extension(plugin): Extension<Plugin<PluginState>>,
 ) -> Result<Html<String>, AppError> {
@@ -79,6 +87,20 @@ fn process_help_response(help_response: serde_json::Value) -> String {
 }
 
 // Handler for calling RPC methods
+#[utoipa::path(
+    post,
+    path = "/v1/{rpc_method}",
+    responses(
+        (status = 201, description = "Call rpc method", body = serde_json::Value),
+        (status = 401, description = "Unauthorized", body = serde_json::Value),
+        (status = 403, description = "Forbidden", body = serde_json::Value),
+        (status = 404, description = "Not Found", body = serde_json::Value),
+        (status = 500, description = "Server Error", body = serde_json::Value)
+    ),
+    request_body(content = serde_json::Value, content_type = "application/json",
+     example = json!({}) ),
+    security(("api_key" = []))
+)]
 pub async fn call_rpc_method(
     Path(rpc_method): Path<String>,
     headers: axum::http::HeaderMap,

@@ -18,6 +18,14 @@ use socketioxide::SocketIo;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tower::ServiceBuilder;
 use tower_http::set_header::SetResponseHeaderLayer;
+use utoipa::{
+    openapi::{
+        security::{ApiKey, ApiKeyValue, SecurityScheme},
+        Components,
+    },
+    Modify, OpenApi,
+};
+use utoipa_swagger_ui::SwaggerUi;
 
 mod certs;
 mod handlers;
@@ -27,6 +35,33 @@ mod shared;
 #[derive(Clone, Debug)]
 struct PluginState {
     sender: Sender<serde_json::Value>,
+}
+
+#[derive(OpenApi)]
+#[openapi(
+        paths(
+            handlers::list_methods,
+            handlers::call_rpc_method,
+        ),
+        modifiers(&SecurityAddon),
+    )]
+struct ApiDoc;
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let updated_component = if let Some(components) = openapi.components.as_mut() {
+            components
+        } else {
+            &mut Components::new()
+        };
+        updated_component.add_security_scheme(
+            "api_key",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("rune"))),
+        );
+        openapi.components = Some(updated_component.clone())
+    }
 }
 
 #[tokio::main]
@@ -71,7 +106,10 @@ async fn main() -> Result<(), anyhow::Error> {
 
     tokio::spawn(notification_background_task(socket_io.clone(), rx));
 
-    let app = Router::new()
+    let swagger_router = Router::new()
+        .merge(SwaggerUi::new(clnrest_options.swagger).url("/swagger.json", ApiDoc::openapi()));
+
+    let rpc_router = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .layer(
             ServiceBuilder::new()
@@ -95,6 +133,8 @@ async fn main() -> Result<(), anyhow::Error> {
                     )),
                 ),
         );
+
+    let app = swagger_router.merge(rpc_router);
 
     match clnrest_options.protocol {
         ClnrestProtocol::Https => {

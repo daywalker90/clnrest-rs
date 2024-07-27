@@ -22,6 +22,8 @@ rcgen = "0.13"
 hyper = "1"
 tower= "0.4"
 tower-http = { version = "0.5", features = ["cors", "set-header"] }
+utoipa = { version = "4", features = ['axum_extras'] }
+utoipa-swagger-ui = { version = "7", features = ['axum'] }
 
 log-panics = "2"
 socketioxide = "0.14"
