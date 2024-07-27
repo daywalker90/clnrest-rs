@@ -30,3 +30,11 @@ socketioxide = "0.14"
 
 cln-plugin = "0.1.9"
 cln-rpc = "0.1.9"
+
+
+[profile.optimized]
+inherits = "release"
+strip = "debuginfo"
+codegen-units = 1
+lto = "fat"
+debug = false
