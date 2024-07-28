@@ -187,5 +187,5 @@ jobs:
         export PYTEST_TIMEOUT=600
         export RUST=1
         source venv/bin/activate
-        ls -al /venv/bin/
+        ls -al venv/bin/
         pytest -n=5 tests/test_*.py
