@@ -171,8 +171,8 @@ jobs:
             python -m grpc_tools.protoc --proto_path="proto" --python_out="tests" --grpc_python_out="tests" proto/*.proto
           fi
           cargo build
-          sudo cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest
-          sudo cp target/debug/clnrest /usr/local/libexec/c-lightning/plugins/clnrest/clnrest.py
+          sudo cp target/debug/clnrest-rs /usr/local/libexec/c-lightning/plugins/clnrest/clnrest
+          sudo cp target/debug/clnrest-rs /usr/local/libexec/c-lightning/plugins/clnrest/clnrest.py
         fi
 
     - name: Run tests
@@ -187,5 +187,4 @@ jobs:
         export PYTEST_TIMEOUT=600
         export RUST=1
         source venv/bin/activate
-        ls -al venv/bin
-        venv/bin/pytest -n=5 tests/test_*.py
+        pytest -n=5 tests/test_*.py
