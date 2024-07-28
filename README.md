@@ -2,7 +2,7 @@
 
 [![main on CLN v24.05](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.05.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.05.yml) [![main on CLN v24.02.2](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.02.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v24.02.yml) [![main on CLN v23.11.2](https://github.com/daywalker90/clnrest/actions/workflows/main_v23.11.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest/actions/workflows/main_v23.11.yml)
 
-# clnrest
+# clnrest-rs
 A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/master/plugins/clnrest)
 
 * [Installation](#installation)
@@ -10,7 +10,7 @@ A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/ma
 * [Thanks](#thanks)
 
 # Installation
-Replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest` with the binary from this repo
+Replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest` on CLN 24.05+ or `clnrest.py` on CLN <24.05 with the binary from this repo.
 
 Release binaries for
 * x86_64-linux
@@ -26,7 +26,7 @@ You can build the plugin yourself instead of using the release binaries.
 First clone the repo:
 
 ```
-git clone https://github.com/daywalker90/clnrest.git
+git clone https://github.com/daywalker90/clnrest-rs.git
 ```
 
 Install a recent rust version ([rustup](https://rustup.rs/) is recommended) and in the ``clnrest`` folder run:
