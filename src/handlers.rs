@@ -6,7 +6,7 @@ use axum::{
     extract::{Extension, Json, Path, State},
     http::{Request, StatusCode},
     middleware::Next,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use cln_plugin::Plugin;
 use cln_rpc::{
@@ -18,7 +18,7 @@ use socketioxide::extract::{AckSender, Bin, Data, SocketRef};
 
 use crate::{
     shared::{call_rpc, filter_json, verify_rune},
-    PluginState,
+    PluginState, SWAGGER_FALLBACK,
 };
 
 #[derive(Debug)]
@@ -203,6 +203,7 @@ pub async fn handle_notification(
     log::debug!("{}", value);
     if let Some(sht) = value.get("shutdown") {
         log::info!("Got shutdown notification: {}", sht);
+        _ = plugin.shutdown();
         process::exit(0);
     }
     match plugin.state().sender.send(value).await {
@@ -225,5 +226,23 @@ pub async fn header_inspection_middleware(
     match verify_rune(plugin, rune, "listclnrest-notifications", &json!({})).await {
         Ok(()) => Ok(next.run(req).await),
         Err(e) => Err(e),
+    }
+}
+
+pub async fn root_handler(
+    headers: axum::http::HeaderMap,
+    Extension(swagger_path): Extension<String>,
+) -> Result<impl axum::response::IntoResponse, StatusCode> {
+    let upgrade = headers
+        .get("upgrade")
+        .and_then(|v| v.to_str().ok())
+        .map(String::from);
+
+    if upgrade.is_some() {
+        Ok(Redirect::permanent("/ws"))
+    } else if swagger_path.eq("/") {
+        Ok(Redirect::permanent(SWAGGER_FALLBACK))
+    } else {
+        Err(StatusCode::NOT_FOUND)
     }
 }

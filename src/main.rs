@@ -10,7 +10,7 @@ use axum_server::tls_rustls::RustlsConfig;
 use certs::generate_certificates;
 use cln_plugin::Builder;
 use handlers::{
-    call_rpc_method, handle_notification, header_inspection_middleware, list_methods,
+    call_rpc_method, handle_notification, header_inspection_middleware, list_methods, root_handler,
     socketio_on_connect,
 };
 use options::*;
@@ -106,12 +106,21 @@ async fn main() -> Result<(), anyhow::Error> {
 
     tokio::spawn(notification_background_task(socket_io.clone(), rx));
 
-    let swagger_router = Router::new()
-        .merge(SwaggerUi::new(clnrest_options.swagger).url("/swagger.json", ApiDoc::openapi()));
+    let root_router = Router::new()
+        .route("/", get(root_handler))
+        .layer(Extension(clnrest_options.swagger.clone()));
+
+    let swagger_path = if clnrest_options.swagger.eq("/") {
+        SWAGGER_FALLBACK.to_string()
+    } else {
+        clnrest_options.swagger
+    };
+    let swagger_router =
+        Router::new().merge(SwaggerUi::new(swagger_path).url("/swagger.json", ApiDoc::openapi()));
 
     let rpc_router = Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
-        .layer(
+        .route("/ws", get(|| async { "hello, world!" }))
+        .route_layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn_with_state(
                     plugin.clone(),
@@ -134,7 +143,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 ),
         );
 
-    let app = swagger_router.merge(rpc_router);
+    let app = root_router.merge(swagger_router).merge(rpc_router);
 
     match clnrest_options.protocol {
         ClnrestProtocol::Https => {
@@ -157,22 +166,24 @@ async fn main() -> Result<(), anyhow::Error> {
                 "REST server running at https://{}",
                 clnrest_options.address_str
             );
-            axum_server::bind_rustls(clnrest_options.address, config)
-                .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-                .await?;
+            tokio::spawn(
+                axum_server::bind_rustls(clnrest_options.address, config)
+                    .serve(app.into_make_service_with_connect_info::<SocketAddr>()),
+            );
         }
         ClnrestProtocol::Http => {
             log::info!(
                 "REST server running at http://{}",
                 clnrest_options.address_str
             );
-            axum_server::bind(clnrest_options.address)
-                .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-                .await?;
+            tokio::spawn(
+                axum_server::bind(clnrest_options.address)
+                    .serve(app.into_make_service_with_connect_info::<SocketAddr>()),
+            );
         }
     }
 
-    return Ok(());
+    plugin.join().await
 }
 
 async fn notification_background_task(io: SocketIo, mut receiver: Receiver<serde_json::Value>) {

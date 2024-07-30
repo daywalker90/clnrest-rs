@@ -33,11 +33,9 @@ pub const OPT_CLNREST_CSP: DefaultStringConfigOption = ConfigOption::new_str_wit
     style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';",
     "Content security policy (CSP) for the server",
 );
-pub const OPT_CLNREST_SWAGGER: DefaultStringConfigOption = ConfigOption::new_str_with_default(
-    "clnrest-swagger-root",
-    "/swagger-ui",
-    "Root path for Swagger UI",
-);
+pub const OPT_CLNREST_SWAGGER: DefaultStringConfigOption =
+    ConfigOption::new_str_with_default("clnrest-swagger-root", "/", "Root path for Swagger UI");
+pub const SWAGGER_FALLBACK: &str = "/swagger-ui";
 
 pub enum ClnrestProtocol {
     Https,
@@ -102,10 +100,8 @@ pub async fn parse_options(
     let csp = plugin.option(&OPT_CLNREST_CSP)?;
 
     let swagger = match plugin.option(&OPT_CLNREST_SWAGGER)? {
-        swag if swag.eq("/") => {
-            return Err(anyhow!(
-                "`clnrest-swagger-root` already serving websocket at the root level"
-            ))
+        swag if !swag.starts_with('/') => {
+            return Err(anyhow!("`clnrest-swagger-root` must start with `/`"))
         }
         swag => swag,
     };
