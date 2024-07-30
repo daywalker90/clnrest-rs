@@ -106,21 +106,18 @@ async fn main() -> Result<(), anyhow::Error> {
 
     tokio::spawn(notification_background_task(socket_io.clone(), rx));
 
-    let root_router = Router::new()
-        .route("/", get(root_handler))
-        .layer(Extension(clnrest_options.swagger.clone()));
-
     let swagger_path = if clnrest_options.swagger.eq("/") {
         SWAGGER_FALLBACK.to_string()
     } else {
-        clnrest_options.swagger
+        clnrest_options.swagger.clone()
     };
     let swagger_router =
         Router::new().merge(SwaggerUi::new(swagger_path).url("/swagger.json", ApiDoc::openapi()));
 
     let rpc_router = Router::new()
-        .route("/ws", get(|| async { "hello, world!" }))
-        .route_layer(
+        .route("/", get(get(root_handler)))
+        .layer(Extension(clnrest_options.swagger))
+        .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn_with_state(
                     plugin.clone(),
@@ -143,7 +140,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 ),
         );
 
-    let app = root_router.merge(swagger_router).merge(rpc_router);
+    let app = swagger_router.merge(rpc_router);
 
     match clnrest_options.protocol {
         ClnrestProtocol::Https => {

@@ -223,9 +223,19 @@ pub async fn header_inspection_middleware(
         .and_then(|v| v.to_str().ok())
         .map(String::from);
 
-    match verify_rune(plugin, rune, "listclnrest-notifications", &json!({})).await {
-        Ok(()) => Ok(next.run(req).await),
-        Err(e) => Err(e),
+    let upgrade = req
+        .headers()
+        .get("upgrade")
+        .and_then(|v| v.to_str().ok())
+        .map(String::from);
+
+    if upgrade.is_some() {
+        match verify_rune(plugin, rune, "listclnrest-notifications", &json!({})).await {
+            Ok(()) => Ok(next.run(req).await),
+            Err(e) => Err(e),
+        }
+    } else {
+        Ok(next.run(req).await)
     }
 }
 
@@ -239,9 +249,9 @@ pub async fn root_handler(
         .map(String::from);
 
     if upgrade.is_some() {
-        Ok(Redirect::permanent("/ws"))
+        Ok(Json(json!("Hello, World!")).into_response())
     } else if swagger_path.eq("/") {
-        Ok(Redirect::permanent(SWAGGER_FALLBACK))
+        Ok(Redirect::permanent(SWAGGER_FALLBACK).into_response())
     } else {
         Err(StatusCode::NOT_FOUND)
     }
