@@ -10,7 +10,6 @@ pub async fn verify_rune(
     rpc_method: &str,
     rpc_params: &serde_json::Value,
 ) -> Result<(), AppError> {
-    // Implement this function
     if let Some(rune) = rune_header {
         match call_rpc(
             plugin,
@@ -22,8 +21,8 @@ pub async fn verify_rune(
         .await
         {
             Ok(o) => {
-                let check_resp: CheckruneResponse = serde_json::from_value(o).unwrap();
-                if check_resp.valid {
+                let checkrune_result: CheckruneResponse = serde_json::from_value(o).unwrap();
+                if checkrune_result.valid {
                     Ok(())
                 } else {
                     let err = RpcError {
@@ -51,23 +50,18 @@ pub async fn verify_rune(
     }
 }
 
-// Implement your process_help_response, call_rpc_method, and verify_rune functions
 pub async fn call_rpc(
     plugin: Plugin<PluginState>,
     method: &str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, RpcError> {
-    // Implement this function
     let rpc_path = plugin.configuration().rpc_file;
     let mut rpc = ClnRpc::new(rpc_path).await.map_err(|e| RpcError {
         code: None,
         data: None,
         message: e.to_string(),
     })?;
-    log::debug!("call_rpc: method:{} params:{:?}", method, params);
-    let response: serde_json::Value = rpc.call_raw(method, &params).await?;
-    log::debug!("call_rpc: response:{}", response);
-    Ok(response)
+    rpc.call_raw(method, &params).await
 }
 
 pub fn filter_json(value: &mut serde_json::Value) {

@@ -14,7 +14,7 @@ use cln_rpc::{
     RpcError,
 };
 use serde_json::json;
-use socketioxide::extract::{AckSender, Bin, Data, SocketRef};
+use socketioxide::extract::{Data, SocketRef};
 
 use crate::{
     shared::{call_rpc, filter_json, verify_rune},
@@ -77,9 +77,7 @@ fn process_help_response(help_response: serde_json::Value) -> String {
 
     for row in processed_res.help {
         processed_html_res.push_str(&format!("Command: {}\n", row.command));
-        processed_html_res.push_str(&format!("Category: {}\n", row.category));
         processed_html_res.push_str(&format!("Description: {}\n", row.description));
-        processed_html_res.push_str(&format!("Verbose: {}\n", row.verbose));
         processed_html_res.push_str(line);
     }
 
@@ -126,6 +124,7 @@ pub async fn call_rpc_method(
     let mut rpc_params = match serde_json::from_slice(&bytes) {
         Ok(o) => o,
         Err(e1) => {
+            // it's not json but a form instead
             let form_str = String::from_utf8(bytes.to_vec()).unwrap();
             let mut form_data = HashMap::new();
             for pair in form_str.split('&') {
@@ -153,10 +152,7 @@ pub async fn call_rpc_method(
 
     filter_json(&mut rpc_params);
 
-    match verify_rune(plugin.clone(), rune, &rpc_method, &rpc_params).await {
-        Ok(()) => (),
-        Err(e) => return Err(e),
-    };
+    verify_rune(plugin.clone(), rune, &rpc_method, &rpc_params).await?;
 
     match call_rpc(plugin, &rpc_method, rpc_params).await {
         Ok(result) => {
@@ -175,38 +171,21 @@ pub async fn call_rpc_method(
     }
 }
 
-pub fn socketio_on_connect(socket: SocketRef, Data(data): Data<serde_json::Value>) {
+pub fn socketio_on_connect(socket: SocketRef, Data(_data): Data<serde_json::Value>) {
     log::info!("Socket.IO connected: {} {}", socket.ns(), socket.id);
-    socket.emit("auth", data).ok();
-
-    socket.on(
-        "message",
-        |socket: SocketRef, Data::<serde_json::Value>(data), Bin(bin)| {
-            log::debug!("Received event: {} {:?}", data, bin);
-            socket.bin(bin).emit("message-back", data).ok();
-        },
-    );
-
-    socket.on(
-        "message-with-ack",
-        |Data::<serde_json::Value>(data), ack: AckSender, Bin(bin)| {
-            log::debug!("Received event: {} {:?}", data, bin);
-            ack.bin(bin).send(data).ok();
-        },
-    );
 }
 
 pub async fn handle_notification(
     plugin: Plugin<PluginState>,
     value: serde_json::Value,
 ) -> Result<(), anyhow::Error> {
-    log::debug!("{}", value);
     if let Some(sht) = value.get("shutdown") {
         log::info!("Got shutdown notification: {}", sht);
+        // This seems to error when subscribing to "*" notifications
         _ = plugin.shutdown();
         process::exit(0);
     }
-    match plugin.state().sender.send(value).await {
+    match plugin.state().notification_sender.send(value).await {
         Ok(()) => Ok(()),
         Err(e) => Err(anyhow!("Error sending notification: {}", e)),
     }
@@ -214,9 +193,14 @@ pub async fn handle_notification(
 
 pub async fn header_inspection_middleware(
     State(plugin): State<Plugin<PluginState>>,
+    Extension(swagger_path): Extension<String>,
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, AppError> {
+    let root_path = req.uri().path();
+    if !root_path.eq("/") && !root_path.eq("/socket.io/") {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
     let rune = req
         .headers()
         .get("rune")
@@ -234,25 +218,9 @@ pub async fn header_inspection_middleware(
             Ok(()) => Ok(next.run(req).await),
             Err(e) => Err(e),
         }
-    } else {
-        Ok(next.run(req).await)
-    }
-}
-
-pub async fn root_handler(
-    headers: axum::http::HeaderMap,
-    Extension(swagger_path): Extension<String>,
-) -> Result<impl axum::response::IntoResponse, StatusCode> {
-    let upgrade = headers
-        .get("upgrade")
-        .and_then(|v| v.to_str().ok())
-        .map(String::from);
-
-    if upgrade.is_some() {
-        Ok(Json(json!("Hello, World!")).into_response())
     } else if swagger_path.eq("/") {
         Ok(Redirect::permanent(SWAGGER_FALLBACK).into_response())
     } else {
-        Err(StatusCode::NOT_FOUND)
+        Ok(StatusCode::NOT_FOUND.into_response())
     }
 }

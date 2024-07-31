@@ -82,13 +82,14 @@ pub async fn parse_options(
             .next()
             .ok_or(anyhow!("No address found for localhost"))?,
         _ => {
-            if let Ok(a) = address_str.parse() {
-                a
+            if let Ok(addr) = address_str.parse() {
+                addr
             } else {
                 return Err(anyhow!("`clnrest-host` should be a valid IP."));
             }
         }
     };
+
     let cors = create_cors_layer(&plugin.option(&OPT_CLNREST_CORS)?)?;
 
     let certs = if let Some(cert_opt) = plugin.option(&OPT_CLNREST_CERTS)? {
@@ -118,26 +119,30 @@ pub async fn parse_options(
 }
 
 fn create_cors_layer(allowed_origin: &str) -> Result<CorsLayer, anyhow::Error> {
-    let cors = if allowed_origin == "*" {
-        CorsLayer::new()
+    if allowed_origin == "*" {
+        Ok(CorsLayer::new()
             .allow_origin(Any)
             .allow_methods(Any)
-            .allow_headers(Any)
+            .allow_headers(Any))
     } else {
         let origins = allowed_origin
             .chars()
-            .filter(|x| !x.is_whitespace())
+            .filter(|char| !char.is_whitespace())
             .collect::<String>()
             .split(',')
-            .collect::<Vec<&str>>()
-            .iter()
-            .map(|y| y.parse::<HeaderValue>().unwrap())
-            .collect::<Vec<HeaderValue>>();
-        CorsLayer::new()
+            .map(|header_val| {
+                HeaderValue::from_str(header_val).map_err(|err| {
+                    anyhow!(
+                        "Could not parse CORS header value `{}`: {}",
+                        header_val,
+                        err
+                    )
+                })
+            })
+            .collect::<Result<Vec<HeaderValue>, anyhow::Error>>()?;
+        Ok(CorsLayer::new()
             .allow_origin(origins)
             .allow_methods(Any)
-            .allow_headers(Any)
-    };
-    log::debug!("cors_layer: in:{} out:{:?}", allowed_origin, cors);
-    Ok(cors)
+            .allow_headers(Any))
+    }
 }

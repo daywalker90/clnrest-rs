@@ -10,6 +10,7 @@ import socketio.exceptions
 from urllib3.util.retry import Retry
 import socketio
 import time
+import pytest
 
 
 def http_session_with_retry():
@@ -277,8 +278,10 @@ def notifications_received_via_websocket(l1, base_url, http_session, rpc_method=
             return notifications
         else:
             raise
-    except Exception as e:
+    except Exception:
         raise
+    if expect_error:
+        raise Exception(f"did not raise expected error {expect_error}")
     time.sleep(2)
     # trigger notification by calling method
     rpc_call = getattr(l1.rpc, rpc_method)
@@ -480,3 +483,30 @@ def test_clnrest_http_headers(node_factory):
                                 verify=ca_cert)
     assert response.headers['Access-Control-Allow-Origin'] == 'http://192.168.1.10:1010'
 
+
+def test_clnrest_websocket_upgrade_header(node_factory):
+    """Test that not setting an upgrade header leads to rejection"""
+    # start a node with clnrest
+    l1, base_url, ca_cert = start_node_with_clnrest(node_factory)
+    http_session = http_session_with_retry()
+    http_session.verify = ca_cert.as_posix()
+
+    sio = socketio.Client(http_session=http_session)
+    notifications = []
+
+    @sio.event
+    def message(data):
+        notifications.append(data)
+    with pytest.raises(socketio.exceptions.ConnectionError, match="Unexpected response from server"):
+        sio.connect(base_url)
+
+    time.sleep(2)
+    # trigger notification by calling method
+    rpc_method='invoice'
+    rpc_params=[100000, 'label', 'description']
+    rpc_call = getattr(l1.rpc, rpc_method)
+    rpc_call(*rpc_params)
+    time.sleep(2)
+    sio.disconnect()
+
+    assert len(notifications) == 0

@@ -10,7 +10,7 @@ use axum_server::tls_rustls::RustlsConfig;
 use certs::generate_certificates;
 use cln_plugin::Builder;
 use handlers::{
-    call_rpc_method, handle_notification, header_inspection_middleware, list_methods, root_handler,
+    call_rpc_method, handle_notification, header_inspection_middleware, list_methods,
     socketio_on_connect,
 };
 use options::*;
@@ -34,7 +34,7 @@ mod shared;
 
 #[derive(Clone, Debug)]
 struct PluginState {
-    sender: Sender<serde_json::Value>,
+    notification_sender: Sender<serde_json::Value>,
 }
 
 #[derive(OpenApi)]
@@ -94,9 +94,11 @@ async fn main() -> Result<(), anyhow::Error> {
         Err(e) => return plugin.disable(&e.to_string()).await,
     };
 
-    let (tx, rx) = mpsc::channel(100);
+    let (notify_tx, notify_rx) = mpsc::channel(100);
 
-    let state = PluginState { sender: tx };
+    let state = PluginState {
+        notification_sender: notify_tx,
+    };
 
     let plugin = plugin.start(state.clone()).await?;
 
@@ -104,7 +106,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     socket_io.ns("/", socketio_on_connect);
 
-    tokio::spawn(notification_background_task(socket_io.clone(), rx));
+    tokio::spawn(notification_background_task(socket_io.clone(), notify_rx));
 
     let swagger_path = if clnrest_options.swagger.eq("/") {
         SWAGGER_FALLBACK.to_string()
@@ -115,8 +117,7 @@ async fn main() -> Result<(), anyhow::Error> {
         Router::new().merge(SwaggerUi::new(swagger_path).url("/swagger.json", ApiDoc::openapi()));
 
     let rpc_router = Router::new()
-        .route("/", get(get(root_handler)))
-        .layer(Extension(clnrest_options.swagger))
+        .route("/", get(|| async { "Hello, World!" }))
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn_with_state(
@@ -125,6 +126,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 ))
                 .layer(socket_layer),
         )
+        .layer(Extension(clnrest_options.swagger))
         .nest(
             "/v1",
             Router::new()
@@ -188,7 +190,7 @@ async fn notification_background_task(io: SocketIo, mut receiver: Receiver<serde
     while let Some(notification) = receiver.recv().await {
         match io.emit("message", notification) {
             Ok(_) => (),
-            Err(e) => log::warn!("Could not emit notifications from background task: {}", e),
+            Err(e) => log::info!("Could not emit notification from background task: {}", e),
         }
     }
 }
