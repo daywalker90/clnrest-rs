@@ -51,16 +51,12 @@ struct SecurityAddon;
 
 impl Modify for SecurityAddon {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let updated_component = if let Some(components) = openapi.components.as_mut() {
-            components
-        } else {
-            &mut Components::new()
-        };
-        updated_component.add_security_scheme(
+        let components = openapi.components.get_or_insert_with(Components::new);
+        components.add_security_scheme(
             "api_key",
             SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("rune"))),
         );
-        openapi.components = Some(updated_component.clone())
+        openapi.components = Some(components.clone())
     }
 }
 
