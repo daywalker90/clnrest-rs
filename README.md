@@ -10,14 +10,32 @@ A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/ma
 * [Thanks](#thanks)
 
 # Installation
-Replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest` on CLN 24.05+ or `clnrest.py` on CLN <24.05 with the binary from this repo.
+There is two ways you can do this, either edit the config or switch out the plugin file:
+
+### CLN v24.05 and later
+- Either replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest` (can be different path depending on your OS) with the binary from this repo
+- Or edit the config:
+
+```
+disable-plugin=clnrest
+plugin=/path/to/clnrest-rs
+```
+
+### CLN v24.02.2 and older
+- Either replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest.py` (can be different path depending on your OS)  with the binary from this repo.
+- Or edit the config:
+
+```
+disable-plugin=clnrest.py
+plugin=/path/to/clnrest-rs
+```
 
 Release binaries for
 * x86_64-linux
 * armv7-linux (Raspberry Pi 32bit)
 * aarch64-linux (Raspberry Pi 64bit)
 
-can be found on the [release](https://github.com/daywalker90/clnrest/releases) page. If you are unsure about your architecture you can run ``uname -m``.
+can be found on the [release](https://github.com/daywalker90/clnrest-rs/releases) page. If you are unsure about your architecture you can run ``uname -m``.
 
 They require ``glibc>=2.31``, which you can check with ``ldd --version``.
 
@@ -29,13 +47,13 @@ First clone the repo:
 git clone https://github.com/daywalker90/clnrest-rs.git
 ```
 
-Install a recent rust version ([rustup](https://rustup.rs/) is recommended) and in the ``clnrest`` folder run:
+Install a recent rust version ([rustup](https://rustup.rs/) is recommended) and in the ``clnrest-rs`` folder run:
 
 ```
 cargo build --release
 ```
 
-After that the binary will be here: ``target/release/clnrest``
+After that the binary will be here: ``target/release/clnrest-rs``
 
 Note: Release binaries are built using ``cross`` and the ``optimized`` profile.
 
