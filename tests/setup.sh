@@ -56,12 +56,12 @@ fi
 
 # Extract the contents
 if [[ $archive_file == *.tar.gz ]]; then
-    if ! tar -xzvf "$script_dir/$archive_file" -C "$clnrest_dir"; then
+    if ! sudo tar -xzvf "$script_dir/$archive_file" -C "$clnrest_dir"; then
         echo "Error extracting the contents of $archive_file" >&2
         exit 1
     fi
 elif [[ $archive_file == *.zip ]]; then
-    if ! unzip "$script_dir/$archive_file" -d "$clnrest_dir"; then
+    if ! sudo unzip "$script_dir/$archive_file" -d "$clnrest_dir"; then
         echo "Error extracting the contents of $archive_file" >&2
         exit 1
     fi
@@ -70,8 +70,8 @@ else
     exit 1
 fi
 
-cp "$clnrest_dir/clnrest-rs" "$clnrest_dir/clnrest"
-cp "$clnrest_dir/clnrest-rs" "$clnrest_dir/clnrest.py"
+sudo cp "$clnrest_dir/clnrest-rs" "$clnrest_dir/clnrest"
+sudo cp "$clnrest_dir/clnrest-rs" "$clnrest_dir/clnrest.py"
 
 # Function to check if a Python package is installed
 check_package() {
