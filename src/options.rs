@@ -7,7 +7,10 @@ use std::{
 use anyhow::anyhow;
 use axum::http::HeaderValue;
 use cln_plugin::{
-    options::{ConfigOption, DefaultStringConfigOption, IntegerConfigOption, StringConfigOption},
+    options::{
+        ConfigOption, DefaultStringArrayConfigOption, DefaultStringConfigOption,
+        IntegerConfigOption, StringConfigOption,
+    },
     ConfiguredPlugin,
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -22,7 +25,7 @@ pub const OPT_CLNREST_PROTOCOL: DefaultStringConfigOption =
     ConfigOption::new_str_with_default("clnrest-protocol", "https", "REST server protocol");
 pub const OPT_CLNREST_HOST: DefaultStringConfigOption =
     ConfigOption::new_str_with_default("clnrest-host", "127.0.0.1", "REST server host");
-pub const OPT_CLNREST_CORS: DefaultStringConfigOption = ConfigOption::new_str_with_default(
+pub const OPT_CLNREST_CORS: DefaultStringArrayConfigOption = ConfigOption::new_str_arr_with_default(
     "clnrest-cors-origins",
     "*",
     "Cross origin resource sharing origins",
@@ -118,18 +121,18 @@ pub async fn parse_options(
     })
 }
 
-fn create_cors_layer(allowed_origin: &str) -> Result<CorsLayer, anyhow::Error> {
-    if allowed_origin == "*" {
+fn create_cors_layer(allowed_origins: &[String]) -> Result<CorsLayer, anyhow::Error> {
+    if allowed_origins.is_empty() {
+        return Err(anyhow!("`clnrest-cors-origins` must not be empty!"));
+    }
+    if allowed_origins.first().unwrap() == "*" {
         Ok(CorsLayer::new()
             .allow_origin(Any)
             .allow_methods(Any)
             .allow_headers(Any))
     } else {
-        let origins = allowed_origin
-            .chars()
-            .filter(|char| !char.is_whitespace())
-            .collect::<String>()
-            .split(',')
+        let origins = allowed_origins
+            .iter()
             .map(|header_val| {
                 HeaderValue::from_str(header_val).map_err(|err| {
                     anyhow!(

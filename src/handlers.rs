@@ -43,7 +43,7 @@ impl IntoResponse for AppError {
     }
 }
 
-// Handler for list-methods
+/* Handler for list-methods */
 #[utoipa::path(
     get,
     path = "/v1/list-methods",
@@ -69,7 +69,7 @@ pub async fn list_methods(
 }
 
 fn process_help_response(help_response: serde_json::Value) -> String {
-    // Parse the "help" field as an array of HelpCommand
+    /* Parse the "help" field as an array of HelpCommand */
     let processed_res: HelpResponse = serde_json::from_value(help_response).unwrap();
 
     let line = "\n---------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n";
@@ -77,14 +77,13 @@ fn process_help_response(help_response: serde_json::Value) -> String {
 
     for row in processed_res.help {
         processed_html_res.push_str(&format!("Command: {}\n", row.command));
-        processed_html_res.push_str(&format!("Description: {}\n", row.description));
         processed_html_res.push_str(line);
     }
 
     processed_html_res
 }
 
-// Handler for calling RPC methods
+/* Handler for calling RPC methods */
 #[utoipa::path(
     post,
     path = "/v1/{rpc_method}",
@@ -124,7 +123,7 @@ pub async fn call_rpc_method(
     let mut rpc_params = match serde_json::from_slice(&bytes) {
         Ok(o) => o,
         Err(e1) => {
-            // it's not json but a form instead
+            /* it's not json but a form instead */
             let form_str = String::from_utf8(bytes.to_vec()).unwrap();
             let mut form_data = HashMap::new();
             for pair in form_str.split('&') {
@@ -181,7 +180,7 @@ pub async fn handle_notification(
 ) -> Result<(), anyhow::Error> {
     if let Some(sht) = value.get("shutdown") {
         log::info!("Got shutdown notification: {}", sht);
-        // This seems to error when subscribing to "*" notifications
+        /* This seems to error when subscribing to "*" notifications */
         _ = plugin.shutdown();
         process::exit(0);
     }

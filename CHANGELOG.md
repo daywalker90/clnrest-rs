@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] 2024-09-26
+
+### Added
+- log rune id, method and params when access was granted
+
+### Changed
+- ``clnrest-cors-origins`` is now a multi option, meaning you have to specify it multiple times if you have multiple values, you must no longer feed it multiple values in a single string. This change was missing to be a drop-in replacement with clnrest.py
+
 ## [0.1.2] 2024-07-31
 
 ### Changed

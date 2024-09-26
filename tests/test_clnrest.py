@@ -105,7 +105,7 @@ def test_clnrest_generate_certificate(node_factory):
 
     # certificates generated at startup
     l1.start()
-    assert [f.exists() for f in files] == [True] * len(files)
+    wait_for(lambda: [f.exists() for f in files] == [True] * len(files))
 
     # the files exist, restarting should not change them
     contents = [f.open().read() for f in files]
@@ -115,12 +115,14 @@ def test_clnrest_generate_certificate(node_factory):
     # remove client.pem file, so all certs are regenerated at restart
     files[2].unlink()
     l1.restart()
+    wait_for(lambda: [f.exists() for f in files] == [True] * len(files))
     contents_1 = [f.open().read() for f in files]
     assert [c[0] != c[1] for c in zip(contents, contents_1)] == [True] * len(files)
 
     # remove client-key.pem file, so all certs are regenerated at restart
     files[3].unlink()
     l1.restart()
+    wait_for(lambda: [f.exists() for f in files] == [True] * len(files))
     contents_2 = [f.open().read() for f in files]
     assert [c[0] != c[1] for c in zip(contents, contents_2)] == [True] * len(files)
 
@@ -319,7 +321,7 @@ def test_clnrest_websocket_wrong_rune(node_factory):
 
     notifications = notifications_received_via_websocket(l1, base_url, http_session, expect_error="401")
     l1.daemon.logsearch_start = 0
-    assert l1.daemon.is_in_log(r"Error code 1501: Not authorized: Not derived from master")
+    assert l1.daemon.wait_for_log(r"Error code 1501: Not authorized: Not derived from master")
     assert len(notifications) == 0
 
 
@@ -465,7 +467,7 @@ def test_clnrest_http_headers(node_factory):
         'clnrest-port': rest_port,
         'clnrest-certs': rest_certs,
         'clnrest-csp': "default-src 'self'; font-src 'self'; img-src 'self'; frame-src 'self'; style-src 'self'; script-src 'self';",
-        'clnrest-cors-origins': 'https://localhost:5500, http://192.168.1.30:3030, http://192.168.1.10:1010'
+        'clnrest-cors-origins': ['https://localhost:5500', 'http://192.168.1.30:3030', 'http://192.168.1.10:1010']
     })
     base_url = 'https://127.0.0.1:' + rest_port
     # This might happen really early!

@@ -5,7 +5,7 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 
 pub fn generate_certificates(certs_path: &PathBuf, rest_host: &str) -> Result<(), Error> {
-    // Generate the CA certificate
+    /* Generate the CA certificate */
     let mut ca_params = CertificateParams::new(vec![
         "cln Root REST CA".to_string(),
         "cln".to_string(),
@@ -23,7 +23,7 @@ pub fn generate_certificates(certs_path: &PathBuf, rest_host: &str) -> Result<()
         ca_key.serialize_pem().as_bytes(),
     )?;
 
-    // Generate the server certificate signed by the CA
+    /* Generate the server certificate signed by the CA */
     let mut server_params = CertificateParams::new(vec![
         format!("cln rest server"),
         "cln".to_string(),
@@ -50,7 +50,7 @@ pub fn generate_certificates(certs_path: &PathBuf, rest_host: &str) -> Result<()
         server_key.serialize_pem().as_bytes(),
     )?;
 
-    // Generate the client certificate signed by the CA
+    /* Generate the client certificate signed by the CA */
     let mut client_params = CertificateParams::new(vec![
         format!("cln rest client"),
         "cln".to_string(),

@@ -1,5 +1,8 @@
 use cln_plugin::Plugin;
-use cln_rpc::{model::responses::CheckruneResponse, ClnRpc, RpcError};
+use cln_rpc::{
+    model::responses::{CheckruneResponse, ShowrunesResponse},
+    ClnRpc, RpcError,
+};
 use serde_json::json;
 
 use crate::{handlers::AppError, PluginState};
@@ -10,44 +13,56 @@ pub async fn verify_rune(
     rpc_method: &str,
     rpc_params: &serde_json::Value,
 ) -> Result<(), AppError> {
-    if let Some(rune) = rune_header {
-        match call_rpc(
-            plugin,
-            "checkrune",
-            json!( {"rune": rune,
-            "method": rpc_method,
-            "params": rpc_params}),
-        )
-        .await
-        {
-            Ok(o) => {
-                let checkrune_result: CheckruneResponse = serde_json::from_value(o).unwrap();
-                if checkrune_result.valid {
-                    Ok(())
-                } else {
-                    let err = RpcError {
-                        code: Some(1502),
-                        message: "Rune is not valid".to_string(),
-                        data: None,
-                    };
-                    log::info!("{}", err);
-                    Err(AppError::Unauthorized(err))
-                }
-            }
-            Err(e) => {
-                log::info!("{}", e);
-                Err(AppError::Unauthorized(e))
-            }
+    let rune = match rune_header {
+        Some(rune) => rune,
+        None => {
+            let err = RpcError {
+                code: Some(1501),
+                data: None,
+                message: "Not authorized: Missing rune".to_string(),
+            };
+            log::info!("{}", err);
+            return Err(AppError::Forbidden(err));
         }
-    } else {
+    };
+
+    let checkrune_result = match call_rpc(
+        plugin.clone(),
+        "checkrune",
+        json!({"rune": rune, "method": rpc_method, "params": rpc_params}),
+    )
+    .await
+    {
+        Ok(o) => serde_json::from_value::<CheckruneResponse>(o).unwrap(),
+        Err(e) => {
+            log::info!("{}", e);
+            return Err(AppError::Unauthorized(e));
+        }
+    };
+
+    if !checkrune_result.valid {
         let err = RpcError {
-            code: Some(1501),
+            code: Some(1502),
+            message: "Rune is not valid".to_string(),
             data: None,
-            message: "Not authorized: Missing rune".to_string(),
         };
         log::info!("{}", err);
-        Err(AppError::Forbidden(err))
+        return Err(AppError::Unauthorized(err));
     }
+
+    let showrunes_result = match call_rpc(plugin, "showrunes", json!({"rune": rune})).await {
+        Ok(r) => serde_json::from_value::<ShowrunesResponse>(r).unwrap(),
+        Err(e) => return Err(AppError::InternalServerError(e)),
+    };
+
+    log::info!(
+        "Authorized rune_id:`{}` access to method:`{}` with params:`{}`",
+        showrunes_result.runes.first().unwrap().unique_id,
+        rpc_method,
+        rpc_params
+    );
+
+    Ok(())
 }
 
 pub async fn call_rpc(
