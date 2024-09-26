@@ -28,10 +28,10 @@ utoipa-swagger-ui = { version = "7", features = ['axum'] }
 log-panics = "2"
 socketioxide = "0.14"
 
-# cln-plugin = "0.2"
-cln-plugin = { path="../lightning/plugins/", version = "^0.2" }
-# cln-rpc = "0.2"
-cln-rpc = { path="../lightning/cln-rpc/", version = "^0.2" }
+cln-plugin = "0.2"
+# cln-plugin = { path="../lightning/plugins/", version = "^0.2" }
+cln-rpc = "0.2"
+# cln-rpc = { path="../lightning/cln-rpc/", version = "^0.2" }
 
 
 [profile.optimized]
