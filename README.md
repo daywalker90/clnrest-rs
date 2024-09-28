@@ -57,6 +57,21 @@ After that the binary will be here: ``target/release/clnrest-rs``
 
 Note: Release binaries are built using ``cross`` and the ``optimized`` profile.
 
+# Options
+
+These work the same as with the python implementation:
+
+### Required options
+- ``clnrest-port``: REST server port to listen on
+
+### Optional options
+- ``clnrest-certs``: Path for certificates (for https), if you have your own certificates, otherwise clnrest will generate self-signed certs in your ``lightning-dir``
+- ``clnrest-protocol``: REST server protocol (``https`` or ``http``), defaults to ``https``
+- ``clnrest-host``: REST server host, defaults to ``127.0.0.1``
+- ``clnrest-cors-origins``:Cross origin resource sharing origins, defaults to ``*``
+- ``clnrest-csp``: Content security policy (CSP) for the server, defaults to ``default-src 'self'; font-src 'self'; img-src 'self' data:; frame-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';``
+- ``clnrest-swagger-root``: Root path for Swagger UI, defaults to ``/``
+
 
 # Thanks
 Thank you to the original author of clnrest [Shahana](https://github.com/ShahanaFarooqui)
