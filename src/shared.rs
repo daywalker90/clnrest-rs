@@ -21,7 +21,7 @@ pub async fn verify_rune(
                 data: None,
                 message: "Not authorized: Missing rune".to_string(),
             };
-            log::info!("{}", err);
+            log::info!("verify_rune failed: method:`{}` {}", rpc_method, err);
             return Err(AppError::Forbidden(err));
         }
     };
@@ -35,7 +35,7 @@ pub async fn verify_rune(
     {
         Ok(o) => serde_json::from_value::<CheckruneResponse>(o).unwrap(),
         Err(e) => {
-            log::info!("{}", e);
+            log::info!("verify_rune failed: method:`{}` {}", rpc_method, e);
             return Err(AppError::Unauthorized(e));
         }
     };
@@ -46,7 +46,7 @@ pub async fn verify_rune(
             message: "Rune is not valid".to_string(),
             data: None,
         };
-        log::info!("{}", err);
+        log::info!("verify_rune failed: method:`{}` {}", rpc_method, err);
         return Err(AppError::Unauthorized(err));
     }
 
