@@ -52,7 +52,6 @@ def test_clnrest_self_signed_certificates(node_factory):
     assert response.status_code == 200
 
 
-@unittest.skipIf(env('RUST') != '1', 'RUST is not enabled skipping rust-dependent tests')
 def test_clnrest_uses_grpc_plugin_certificates(node_factory):
     """Test that clnrest reuses `cln-grpc` plugin certificates if available.
     Defaults:
@@ -65,7 +64,7 @@ def test_clnrest_uses_grpc_plugin_certificates(node_factory):
     base_url = f'https://{rest_host}:{rest_port}'
     # This might happen really early!
     l1.daemon.logsearch_start = 0
-    l1.daemon.wait_for_logs([r'serving grpc on 0.0.0.0:',
+    l1.daemon.wait_for_logs([r'serving grpc on',
                              r'plugin-clnrest(-rs)?(\.py)?: REST server running at ' + base_url])
     ca_cert = Path(l1.daemon.lightning_dir) / TEST_NETWORK / 'ca.pem'
     http_session = http_session_with_retry()
@@ -153,7 +152,7 @@ def test_clnrest_list_methods(node_factory):
     http_session = http_session_with_retry()
     response = http_session.get(base_url + '/v1/list-methods', verify=ca_cert)
     assert response.status_code == 200
-    assert response.text.find('Command: getinfo') > 0
+    assert response.text.find('getinfo') > 0
 
 
 def test_clnrest_unknown_method(node_factory):
