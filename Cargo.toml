@@ -1,6 +1,6 @@
 [package]
 name = "clnrest-rs"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "Transforms RPC calls into REST APIs"
@@ -16,21 +16,21 @@ serde_json = "1"
 tokio-util = { version = "0.7", features = ["codec"] }
 tokio = { version="1", features = ['io-std', 'rt-multi-thread', 'sync', 'macros', 'io-util'] }
 axum = "0.7"
-axum-server = { version = "0.6", features = ["tls-rustls"] }
+axum-server = { version = "0.7", features = ["tls-rustls"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 rcgen = "0.13"
 hyper = "1"
 tower= "0.5"
 tower-http = { version = "0.6", features = ["cors", "set-header"] }
-utoipa = { version = "4", features = ['axum_extras'] }
-utoipa-swagger-ui = { version = "7", features = ['axum'] }
+utoipa = { version = "5", features = ['axum_extras'] }
+utoipa-swagger-ui = { version = "8", features = ['axum'] }
 
 log-panics = "2"
-socketioxide = "0.14"
+socketioxide = "0.15"
 
-cln-plugin = "0.2"
+cln-plugin = "0.3"
 # cln-plugin = { path="../lightning/plugins/", version = "^0.2" }
-cln-rpc = "0.2"
+cln-rpc = "0.3"
 # cln-rpc = { path="../lightning/cln-rpc/", version = "^0.2" }
 
 

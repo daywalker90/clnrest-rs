@@ -184,7 +184,7 @@ async fn main() -> Result<(), anyhow::Error> {
 async fn notification_background_task(io: SocketIo, mut receiver: Receiver<serde_json::Value>) {
     log::debug!("Background task spawned");
     while let Some(notification) = receiver.recv().await {
-        match io.emit("message", notification) {
+        match io.emit("message", &notification) {
             Ok(_) => (),
             Err(e) => log::info!("Could not emit notification from background task: {}", e),
         }

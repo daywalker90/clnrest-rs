@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] 2024-12-10
+
+### Changed
+- logging: added offending method name if verify_rune fails
+- upgraded dependencies
+
 ## [0.2.0] 2024-09-26
 
 ### Added
