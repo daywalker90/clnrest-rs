@@ -12,21 +12,11 @@ A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/ma
 # Installation
 There is two ways you can do this, either edit the config or switch out the plugin file:
 
-### CLN v24.05 and later
 - Either replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest` (can be different path depending on your OS) with the binary from this repo
 - Or edit the config:
 
 ```
 disable-plugin=clnrest
-plugin=/path/to/clnrest-rs
-```
-
-### CLN v24.02.2 and older
-- Either replace `/usr/local/libexec/c-lightning/plugins/clnrest/clnrest.py` (can be different path depending on your OS)  with the binary from this repo.
-- Or edit the config:
-
-```
-disable-plugin=clnrest.py
 plugin=/path/to/clnrest-rs
 ```
 
