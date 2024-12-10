@@ -20,5 +20,5 @@ jobs:
         uses: ./.github/workflows/ci.yml
         with:
             cln-version: "v24.11"
-            pyln-version: "24.05"
+            pyln-version: "24.11"
             tagged-release: false
