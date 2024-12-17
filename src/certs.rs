@@ -2,7 +2,7 @@ use anyhow::Error;
 use rcgen::{CertificateParams, DistinguishedName, KeyPair};
 use std::fs;
 use std::net::IpAddr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn generate_certificates(certs_path: &PathBuf, rest_host: &str) -> Result<(), Error> {
     /* Generate the CA certificate */
@@ -73,4 +73,20 @@ pub fn generate_certificates(certs_path: &PathBuf, rest_host: &str) -> Result<()
     )?;
 
     Ok(())
+}
+
+pub fn do_certificates_exist(cert_dir: &Path) -> bool {
+    let required_files = [
+        "server.pem",
+        "server-key.pem",
+        "client.pem",
+        "client-key.pem",
+        "ca.pem",
+        "ca-key.pem",
+    ];
+
+    required_files.iter().all(|file| {
+        let path = cert_dir.join(file);
+        path.exists() && path.metadata().map(|m| m.len() > 0).unwrap_or(false)
+    })
 }

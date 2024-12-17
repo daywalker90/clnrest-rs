@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, str::FromStr};
+use std::{net::SocketAddr, str::FromStr, time::Duration};
 
 use axum::{
     http::{HeaderName, HeaderValue},
@@ -7,7 +7,7 @@ use axum::{
     Extension, Router,
 };
 use axum_server::tls_rustls::RustlsConfig;
-use certs::generate_certificates;
+use certs::{do_certificates_exist, generate_certificates};
 use cln_plugin::Builder;
 use handlers::{
     call_rpc_method, handle_notification, header_inspection_middleware, list_methods,
@@ -15,7 +15,10 @@ use handlers::{
 };
 use options::*;
 use socketioxide::SocketIo;
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::{
+    sync::mpsc::{self, Receiver, Sender},
+    time,
+};
 use tower::ServiceBuilder;
 use tower_http::set_header::SetResponseHeaderLayer;
 use utoipa::{
@@ -142,13 +145,16 @@ async fn main() -> Result<(), anyhow::Error> {
 
     match clnrest_options.protocol {
         ClnrestProtocol::Https => {
-            if !clnrest_options.certs.join("server.pem").exists()
-                || !clnrest_options.certs.join("server-key.pem").exists()
-                || !clnrest_options.certs.join("client.pem").exists()
-                || !clnrest_options.certs.join("client-key.pem").exists()
-                || !clnrest_options.certs.join("ca.pem").exists()
-                || !clnrest_options.certs.join("ca-key.pem").exists()
-            {
+            let max_retries = 10;
+            let mut retries = 0;
+            while retries < max_retries && !do_certificates_exist(&clnrest_options.certs) {
+                log::debug!("Certificates incomplete. Retrying...");
+                time::sleep(Duration::from_millis(500)).await;
+                retries += 1;
+            }
+
+            if !do_certificates_exist(&clnrest_options.certs) {
+                log::debug!("Certificates still not existing after retries. Generating...");
                 generate_certificates(&clnrest_options.certs, &plugin.option(&OPT_CLNREST_HOST)?)?;
             }
 
