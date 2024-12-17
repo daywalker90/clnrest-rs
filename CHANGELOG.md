@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2] 2024-12-17
+
+### Fixed
+
+- wait for other plugins to generate certs
+
 ## [0.2.1] 2024-12-10
 
 ### Changed
