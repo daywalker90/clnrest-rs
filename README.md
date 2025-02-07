@@ -2,6 +2,8 @@
 
 [![main on CLN v24.11](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.11.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.11.yml) [![main on CLN v24.08.2](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.08.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.08.yml) [![main on CLN v24.05](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.05.yml/badge.svg?branch=main)](https://github.com/daywalker90/clnrest-rs/actions/workflows/main_v24.05.yml)
 
+# THIS PLUGIN IS MERGED INTO CLN NOW AND WILL BE SHIPPED WITH v25.02+
+
 # clnrest-rs
 A rust rewrite of [clnrest](https://github.com/ElementsProject/lightning/tree/master/plugins/clnrest)
 
